@@ -3,11 +3,8 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/event-scraper/event"
-	"github.com/event-scraper/venue"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -20,20 +17,6 @@ func main() {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	if db == nil {
-		panic("failed to connect database")
-	}
-
-	venue.GenerateSeedVenues(db)
-	event.GenerateSeedEvents(db)
-	var v venue.Venue
-	db.First(&v)
-
-	fmt.Println("\n\nresult: ", v)
-	fmt.Println("\ncreated: ", v.CreatedAt)
-	fmt.Println("\nid: ", v.ID)
-	fmt.Println("\nname: ", v.Name)
-	fmt.Println("\nwebsite: ", v.Website)
 
 	// Storing to file in the interim
 	// file, err := os.Create("data.csv")
