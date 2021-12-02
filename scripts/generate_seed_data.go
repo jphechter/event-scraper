@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/event-scraper/event"
 	"github.com/event-scraper/venue"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -58,19 +57,19 @@ func generateVenues(db *gorm.DB) {
 }
 
 func generateEvents(db *gorm.DB) {
-	db.AutoMigrate(&event.Event{})
+	db.AutoMigrate(&venue.Event{})
 
 	var v venue.Venue
 	db.First(&v, 1) // Ram's Head
 	t, _ := time.Parse("2006-01-02", "2021-11-22")
-	db.Create(&event.Event{
+	db.Create(&venue.Event{
 		Name:      "Event 1",
 		Date:      t,
 		EventPage: "https://www.ramsheadlive.com/event-1",
 		VenueID:   int(v.ID), // There are 2 valid ways to establish this key
 	})
 
-	db.Create(&event.Event{
+	db.Create(&venue.Event{
 		Name:      "Event 2",
 		Date:      t,
 		EventPage: "https://www.ramsheadlive.com/event-2",
@@ -79,14 +78,14 @@ func generateEvents(db *gorm.DB) {
 
 	var w venue.Venue
 	db.First(&w, 2) // Soundstage
-	db.Create(&event.Event{
+	db.Create(&venue.Event{
 		Name:      "Event 3",
 		Date:      t,
 		EventPage: "https://www.baltimoresoundstage.com/event-3",
 		VenueID:   int(w.ID),
 	})
 
-	db.Create(&event.Event{
+	db.Create(&venue.Event{
 		Name:      "Event 4",
 		Date:      t,
 		EventPage: "https://www.baltimoresoundstage.com/event-4",

@@ -4,7 +4,9 @@ package main
 
 import (
 	"os"
+	"sync"
 
+	"github.com/event-scraper/venue"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -18,23 +20,14 @@ func main() {
 		panic("failed to connect database")
 	}
 
-	// Storing to file in the interim
-	// file, err := os.Create("data.csv")
-	// if err != nil {
-	// 	log.Fatalf("Could not create file, err :%q", err)
-	// 	return
-	// }
-	// writer := csv.NewWriter(file)
-
+	venues := []func(*gorm.DB, *sync.WaitGroup){venue.ScrapeRH}
 	// venues := []func(*csv.Writer, *sync.WaitGroup){venue.ScrapeRH, venue.ScrapeBSS}
 
-	// var wg *sync.WaitGroup = new(sync.WaitGroup)
-	// for _, venue := range venues {
-	// 	wg.Add(1)
-	// 	go venue(writer, wg)
-	// }
+	var wg *sync.WaitGroup = new(sync.WaitGroup)
+	for _, venue := range venues {
+		wg.Add(1)
+		go venue(db, wg)
+	}
 
-	// wg.Wait()
-	// file.Close()
-	// writer.Flush()
+	wg.Wait()
 }
