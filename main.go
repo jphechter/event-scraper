@@ -20,9 +20,7 @@ func main() {
 		panic("failed to connect database")
 	}
 
-	venues := []func(*gorm.DB, *sync.WaitGroup){venue.ScrapeRH}
-	// venues := []func(*csv.Writer, *sync.WaitGroup){venue.ScrapeRH, venue.ScrapeBSS}
-
+	venues := []func(*gorm.DB, *sync.WaitGroup){venue.ScrapeRH, venue.ScrapeBSS}
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
 	for _, venue := range venues {
 		wg.Add(1)
