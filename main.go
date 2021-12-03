@@ -3,29 +3,27 @@
 package main
 
 import (
-	"os"
-	"sync"
-
-	"github.com/event-scraper/venue"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	"github.com/event-scraper/cmd"
 )
 
 func main() {
+
+	cmd.Execute()
+
 	// NOTE: the args following db_name are required to establish the connection correctly
 	// dsn = "user_name:password@tcp(localhost:3306)/db_name?charset=utf8mb4&parseTime=True&loc=Local"
-	dsn := os.Getenv("ES_DATABASE_URL")
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
+	// dsn := os.Getenv("ES_DATABASE_URL")
+	// db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	// if err != nil {
+	// 	panic("failed to connect database")
+	// }
 
-	venues := []func(*gorm.DB, *sync.WaitGroup){venue.ScrapeRH, venue.ScrapeBSS}
-	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	for _, venue := range venues {
-		wg.Add(1)
-		go venue(db, wg)
-	}
+	// venues := []func(*gorm.DB, *sync.WaitGroup){venue.ScrapeRH, venue.ScrapeBSS}
+	// var wg *sync.WaitGroup = new(sync.WaitGroup)
+	// for _, venue := range venues {
+	// 	wg.Add(1)
+	// 	go venue(db, wg)
+	// }
 
-	wg.Wait()
+	// wg.Wait()
 }
