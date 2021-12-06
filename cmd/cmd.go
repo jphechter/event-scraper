@@ -10,8 +10,8 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "app",
-	Short: "Application Description",
+	Use:   "migrate",
+	Short: "Event Scraper Migration Tools",
 }
 
 // Execute ..
