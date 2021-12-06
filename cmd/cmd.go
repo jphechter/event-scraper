@@ -39,7 +39,9 @@ var migrateCreateCmd = &cobra.Command{
 			return
 		}
 
-		if err := migrations.Create(name); err != nil {
+		db := database.NewDB()
+
+		if err := migrations.Create(name, db); err != nil {
 			fmt.Println("Unable to create migration", err.Error())
 			return
 		}

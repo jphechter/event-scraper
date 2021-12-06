@@ -1,6 +1,6 @@
 package migrations
 
-import "database/sql"
+import "gorm.io/gorm"
 
 func init() {
 	migrator.AddMigration(&Migration{
@@ -10,10 +10,10 @@ func init() {
 	})
 }
 
-func mig_{{.Version}}_{{.Name}}_up(tx *sql.Tx) error {
+func mig_{{.Version}}_{{.Name}}_up(db *gorm.DB) error {
 	return nil
 }
 
-func mig_{{.Version}}_{{.Name}}_down(tx *sql.Tx) error {
+func mig_{{.Version}}_{{.Name}}_down(db *gorm.DB) error {
 	return nil
 }

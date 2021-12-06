@@ -2,27 +2,31 @@ package migrations
 
 import (
 	"bytes"
-	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"html/template"
 	"os"
-	"time"
+	"strconv"
+
+	"gorm.io/gorm"
 )
 
 type Migration struct {
 	Version string
-	Up      func(*sql.Tx) error
-	Down    func(*sql.Tx) error
+	Up      func(*gorm.DB) error
+	Down    func(*gorm.DB) error
 
 	done bool
 }
 
 type Migrator struct {
-	db         *sql.DB
+	db         *gorm.DB
 	Versions   []string
 	Migrations map[string]*Migration
+}
+
+type DatabaseVersion struct {
+	Version string
 }
 
 var migrator = &Migrator{
@@ -49,8 +53,15 @@ func (m *Migrator) AddMigration(mg *Migration) {
 }
 
 // Create new migration from template
-func Create(name string) error {
-	version := time.Now().Format("20060102150405")
+func Create(name string, db *gorm.DB) error {
+	var last_version DatabaseVersion
+	db.Last(&last_version)
+
+	fmt.Printf("Result: %s\n", last_version.Version)
+
+	lv_int, _ := strconv.Atoi(last_version.Version)
+	lv_int++ // increment the version
+	version := fmt.Sprintf("%06d", lv_int)
 
 	in := struct {
 		Version string
@@ -82,19 +93,14 @@ func Create(name string) error {
 	return nil
 }
 
-func Init(db *sql.DB) (*Migrator, error) {
+func Init(db *gorm.DB) (*Migrator, error) {
+	if !db.Migrator().HasTable(&DatabaseVersion{}) {
+		db.Table("_version").AutoMigrate(&DatabaseVersion{})
+	}
 	migrator.db = db
 
-	// Create `schema_migrations` table to remember which migrations were executed.
-	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
-		version varchar(255)
-	);`); err != nil {
-		fmt.Println("Unable to create `schema_migrations` table", err)
-		return migrator, err
-	}
-
-	// Find out all the executed migrations
-	rows, err := db.Query("SELECT version FROM `schema_migrations`;")
+	// Find executed migrations
+	rows, err := db.Raw("SELECT version FROM `_version`;").Rows()
 	if err != nil {
 		return migrator, err
 	}
@@ -120,80 +126,70 @@ func Init(db *sql.DB) (*Migrator, error) {
 // Run Up migrations in a single SQL transaction
 // step sets num of migrations
 func (m *Migrator) Up(step int) error {
-	tx, err := m.db.BeginTx(context.TODO(), &sql.TxOptions{})
-	if err != nil {
-		return err
-	}
+	m.db.Transaction(func(tx *gorm.DB) error {
+		count := 0
+		for _, v := range m.Versions {
+			if step > 0 && count == step {
+				break
+			}
 
-	count := 0
-	for _, v := range m.Versions {
-		if step > 0 && count == step {
-			break
+			mg := m.Migrations[v]
+
+			if mg.done {
+				continue
+			}
+
+			fmt.Println("Running migration", mg.Version)
+			if err := mg.Up(m.db); err != nil {
+				tx.Rollback()
+				return err
+			}
+
+			if result := tx.Exec("INSERT INTO `_version` VALUES(?)", mg.Version); result.Error != nil {
+				tx.Rollback()
+				return result.Error
+			}
+			fmt.Println("Finished running migration", mg.Version)
+
+			count++
 		}
-
-		mg := m.Migrations[v]
-
-		if mg.done {
-			continue
-		}
-
-		fmt.Println("Running migration", mg.Version)
-		if err := mg.Up(tx); err != nil {
-			tx.Rollback()
-			return err
-		}
-
-		if _, err := tx.Exec("INSERT INTO `schema_migrations` VALUES(?)", mg.Version); err != nil {
-			tx.Rollback()
-			return err
-		}
-		fmt.Println("Finished running migration", mg.Version)
-
-		count++
-	}
-
-	tx.Commit()
-
+		return nil
+	})
 	return nil
 }
 
 // Run Down migrations in a single SQL transaction
 // step sets num of migrations
 func (m *Migrator) Down(step int) error {
-	tx, err := m.db.BeginTx(context.TODO(), &sql.TxOptions{})
-	if err != nil {
-		return err
-	}
+	m.db.Transaction(func(tx *gorm.DB) error {
+		count := 0
+		for _, v := range reverse(m.Versions) {
+			if step > 0 && count == step {
+				break
+			}
 
-	count := 0
-	for _, v := range reverse(m.Versions) {
-		if step > 0 && count == step {
-			break
+			mg := m.Migrations[v]
+
+			if !mg.done {
+				continue
+			}
+
+			fmt.Println("Reverting Migration", mg.Version)
+			if err := mg.Down(tx); err != nil {
+				tx.Rollback()
+				return err
+			}
+
+			if result := tx.Exec("DELETE FROM `schema_migrations` WHERE version = ?", mg.Version); result.Error != nil {
+				tx.Rollback()
+				return result.Error
+			}
+			fmt.Println("Finished reverting migration", mg.Version)
+
+			count++
 		}
-
-		mg := m.Migrations[v]
-
-		if !mg.done {
-			continue
-		}
-
-		fmt.Println("Reverting Migration", mg.Version)
-		if err := mg.Down(tx); err != nil {
-			tx.Rollback()
-			return err
-		}
-
-		if _, err := tx.Exec("DELETE FROM `schema_migrations` WHERE version = ?", mg.Version); err != nil {
-			tx.Rollback()
-			return err
-		}
-		fmt.Println("Finished reverting migration", mg.Version)
-
-		count++
-	}
-
-	tx.Commit()
-
+		return nil
+	})
 	return nil
 }
 

@@ -7,17 +7,17 @@ import (
 )
 
 type Venue struct {
-	gorm.Model
 	Name    string
 	Website string
 	Address string
+	gorm.Model
 }
 
 type Event struct {
-	gorm.Model
 	Name      string
 	Date      time.Time
 	EventPage string
 	VenueID   int
 	Venue     Venue
+	gorm.Model
 }
