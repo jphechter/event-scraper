@@ -145,6 +145,7 @@ func (m *Migrator) Up(step int) error {
 				return err
 			}
 
+			// TODO: just replace the version instead of adding multiple lines
 			if result := tx.Exec("INSERT INTO `_version` VALUES(?)", mg.Version); result.Error != nil {
 				tx.Rollback()
 				return result.Error
@@ -180,7 +181,7 @@ func (m *Migrator) Down(step int) error {
 				return err
 			}
 
-			if result := tx.Exec("DELETE FROM `schema_migrations` WHERE version = ?", mg.Version); result.Error != nil {
+			if result := tx.Exec("DELETE FROM `_version` WHERE version = ?", mg.Version); result.Error != nil {
 				tx.Rollback()
 				return result.Error
 			}

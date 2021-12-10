@@ -16,11 +16,13 @@ func init() {
 func mig_000001_init_schema_up(db *gorm.DB) error {
 	db.Migrator().CreateTable(&venue.Venue{})
 	db.Migrator().CreateTable(&venue.Event{})
+	db.Migrator().CreateTable(&venue.VenueEventRule{})
 	return nil
 }
 
 func mig_000001_init_schema_down(db *gorm.DB) error {
-	db.Migrator().DropTable(&venue.Venue{})
+	db.Migrator().DropTable(&venue.VenueEventRule{})
 	db.Migrator().DropTable(&venue.Event{})
+	db.Migrator().DropTable(&venue.Venue{})
 	return nil
 }

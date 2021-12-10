@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	if len(os.Args[1:]) > 0 {
+	if len(os.Args[1:]) > 0 { // Currently only handles migrations
 		cmd.Execute()
 		os.Exit(0)
 	}
@@ -27,12 +27,21 @@ func main() {
 		panic("failed to connect database")
 	}
 
-	venues := []func(*gorm.DB, *sync.WaitGroup){venue.ScrapeRH, venue.ScrapeBSS}
+	// Scrape venues
 	var wg *sync.WaitGroup = new(sync.WaitGroup)
-	for _, venue := range venues {
-		wg.Add(1)
-		go venue(db, wg)
-	}
+	// venues := getAllVenues(db)
+	// for _, v := range venues {
+	rh := venue.GetVenueByID(db, 1)
+	go rh.ScrapeVenue(db, wg)
+	// go v.ScrapeVenue(db, wg)
+	wg.Add(1)
+	// }
 
 	wg.Wait()
+}
+
+func getAllVenues(db *gorm.DB) []venue.Venue {
+	var venues []venue.Venue
+	db.Find(&venues)
+	return venues
 }
